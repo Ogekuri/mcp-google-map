@@ -132,7 +132,7 @@
       - `extractErrorMessage(error)`: gRPC 7/403 → enable-API message; 8/429 → quota message
     - inline: `openNow` / `minRating` filtering and output mapping
   - `PlacesSearcher.searchText(params)`: text search with full filter surface [`src/services/PlacesSearcher.ts`]
-    - `NewPlacesService.searchTextFull(params)`: request build (pageSize clamp, bias circle, server-side filters) + pagination token [`src/services/NewPlacesService.ts`]
+    - `NewPlacesService.searchTextFull(params)`: request build (requested count translated to `maxResultCount` clamped 1-20 — SDK proto lacks `pageSize`; bias circle, server-side filters) + pagination token (`pageToken` forwarded but dropped by SDK protos) [`src/services/NewPlacesService.ts`]
       - external: `PlacesClient.searchText`
       - `transformSearchResult(place)` per result (as above); `extractErrorMessage(error)` on failure
     - inline: output mapping incl. `nextPageToken`, `fieldMask`, optional `raw_response`

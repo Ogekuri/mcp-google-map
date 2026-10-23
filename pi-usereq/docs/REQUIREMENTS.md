@@ -133,13 +133,14 @@ Components and libraries (evidence: `package.json` `dependencies`/`devDependenci
 - **REQ-026**: MUST apply `openNow` and `minRating` filters for `maps_search_nearby` client-side after the API response, not server-side (`PlacesSearcher.searchNearby`).
 - **REQ-027**: MUST forward `openNow`, `minRating`, `includedType`, `strictTypeFiltering`, and `priceLevels` as server-side Places Text Search filters for `maps_search_places`.
 - **REQ-028**: MUST apply location bias for `maps_search_places` as a circle with radius defaulting to 5000 m when unspecified.
-- **REQ-029**: MUST clamp `pageSize` for `maps_search_places` into 1-20 and return `nextPageToken` when the API paginates, accepting `pageToken` for subsequent pages.
+- **REQ-029**: MUST translate `pageSize` or `maxResultCount` (default 10) into the single request field `maxResultCount` clamped into 1-20 for `maps_search_places`, because the SDK proto lacks `pageSize`.
 - **REQ-030**: MUST attach `raw_place` per result and the full `raw_response` when `maps_search_places` runs with `includeRaw: true`.
 - **REQ-031**: MUST return place details with contact info, hours, price data, parking, accessibility, dining, serves, atmosphere, payment, review and generative summaries, reviews with attribution URIs, and photo metadata for `maps_place_details`.
 - **REQ-032**: MUST resolve at most `maxPhotos` photo URLs via Places photo media (maxWidthPx 800) for `maps_place_details`, silently skipping failed photos, and omit photos when `maxPhotos` is 0.
 - **REQ-033**: MUST include `raw_place` and the applied field mask when `maps_place_details` runs with `includeRaw: true`.
 - **REQ-034**: MUST derive the legacy place ID from the `places/{id}` resource name, falling back to the `id` field (`extractLegacyPlaceId`).
 - **REQ-035**: MUST compute open-now status from `currentOpeningHours.openNow`, then `regularOpeningHours.openNow`, then period arithmetic using `utcOffsetMinutes` when available, else machine local time (`isCurrentlyOpen`).
+- **REQ-081**: MUST return `nextPageToken` in `maps_search_places` output when the Places API response includes one.
 
 #### Routing Tools
 - **REQ-036**: MUST compute directions for `maps_directions` via Routes `computeRoutes`, returning routes, summary, and total distance/duration in value and text form.
@@ -203,11 +204,12 @@ Components and libraries (evidence: `package.json` `dependencies`/`devDependenci
 - **LIM-004**: `maps_static_map` passes `size` through without enforcing the documented 640x640 maximum; only the 16384-character URL limit is enforced.
 - **LIM-005**: Transit routing has regional coverage gaps; the server surfaces Google's regional limitations (notably Japan and India) as errors or warnings rather than fallbacks.
 - **LIM-006**: No explicit performance optimizations identified beyond bounded concurrency batching (grid scan concurrency 5 in `scanKeywordGrid`; CLI semaphore clamp 1-50).
+- **LIM-007**: `maps_search_places` `pageToken` is copied into the request but silently dropped by `@googlemaps/places` SDK protos (verified up to v3.1.0), so pagination requests have no server-side effect.
 
 ## 4. Test Requirements
 - **TST-001**: MUST verify REQ-073/REQ-074/REQ-075 by running `npm test` (`tests/cliExec.unit.test.ts`): injected runners assert stdout JSON on success, stderr JSON plus exit code 1 on failure responses, thrown errors, and alias resolution; pass when all assertions hold.
 - **TST-002**: MUST verify REQ-070/REQ-071/REQ-072 by running `npm test` (`tests/cliExec.unit.test.ts` doctor cases): local mode makes zero API calls, missing key fails safely, live mode probes three APIs independently; pass when reports match expectations.
-- **TST-003**: MUST verify REQ-024-REQ-030 by running `npm test` (`tests/geoscoutFilters.unit.test.ts`): mocked `PlacesClient` assertions confirm forwarded filters, field masks, priceRange preservation, `nextPageToken`, `pageToken`, raw payloads, and legacy array contract.
+- **TST-003**: MUST verify REQ-024-REQ-030 and REQ-081 by running `npm test` (`tests/geoscoutFilters.unit.test.ts`): mocked `PlacesClient` assertions confirm forwarded filters, field masks, priceRange preservation, `pageSize`→`maxResultCount` translation, `nextPageToken`, `pageToken` forwarding, raw payloads, and legacy array contract.
 - **TST-004**: MUST verify REQ-054/REQ-055/REQ-057 by running `npm test` (`tests/locationResolution.unit.test.ts`): mocked clients assert resolved waypoints, geocode→text-search fallback, thrown errors on unresolvable stops, and coordinate handling without API calls.
 - **TST-005**: MUST verify REQ-058 by running `npm test` (`tests/planRoute.unit.test.ts`): 2-4 stop scenarios assert optimization is applied or skipped per thresholds and ordering is preserved when disabled.
 - **TST-006**: MUST verify REQ-036-REQ-043 by running `npm test` (`tests/routesWaypoints.unit.test.ts`): mocked `fetch` asserts structured waypoint forwarding, two-intermediate optimization minimum, string compatibility, matrix rebuild, and waypoint-aware error labels.

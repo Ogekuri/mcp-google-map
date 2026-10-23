@@ -189,7 +189,7 @@ import { runWithContext } from "../utils/requestContext.js";
 
 ---
 
-# NewPlacesService.ts | TypeScript | 657L | 3 symbols | 2 imports | 27 comments
+# NewPlacesService.ts | TypeScript | 660L | 3 symbols | 2 imports | 30 comments
 > Path: `src/services/NewPlacesService.ts`
 
 ## Imports
@@ -202,16 +202,16 @@ import { Logger } from "../index.js";
 
 ### class `export class NewPlacesService` (L4-303)
 
-### fn `const toDayNumber = (value: any): number | undefined =>` (L558-569)
+### fn `const toDayNumber = (value: any): number | undefined =>` (L561-572)
 
-### fn `const toMinutes = (time: any): number | undefined =>` (L571-584)
+### fn `const toMinutes = (time: any): number | undefined =>` (L574-587)
 
 ## Symbol Index
 |Symbol|Kind|Vis|Lines|Sig|
 |---|---|---|---|---|
 |`NewPlacesService`|class||4-303|export class NewPlacesService|
-|`toDayNumber`|fn||558-569|const toDayNumber = (value: any): number | undefined =>|
-|`toMinutes`|fn||571-584|const toMinutes = (time: any): number | undefined =>|
+|`toDayNumber`|fn||561-572|const toDayNumber = (value: any): number | undefined =>|
+|`toMinutes`|fn||574-587|const toMinutes = (time: any): number | undefined =>|
 
 
 ---
