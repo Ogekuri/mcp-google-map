@@ -1,0 +1,68 @@
+# Configurazione
+
+## Google Maps API key
+
+Ottieni una chiave da <https://console.cloud.google.com/apis/credentials> e abilita sulla chiave i servizi che usi:
+
+| Servizio console | Tool che lo richiedono |
+| --- | --- |
+| **Places API (New)** | `maps_search_places`, `maps_search_nearby`, `maps_place_details`, `maps_explore_area`, `maps_compare_places`, `maps_search_along_route`, `maps_local_rank_tracker` |
+| Geocoding API | `maps_geocode`, `maps_reverse_geocode`, `maps_batch_geocode` |
+| Routes API | `maps_directions`, `maps_distance_matrix`, `maps_plan_route` |
+| Elevation API | `maps_elevation` |
+| Air Quality API | `maps_air_quality` |
+| Weather API | `maps_weather` |
+
+La chiave può essere fornita in tre modi (priorità decrescente):
+
+1. flag CLI `--apikey "AIza..."`
+2. header HTTP `X-Goog-Api-Key` (o `x-api-key`) sul trasporto HTTP — **per richiesta**, utile in multi-sessione
+3. variabile d'ambiente `GOOGLE_MAPS_API_KEY` (o riga in `.env`)
+
+## Variabili d'ambiente
+
+Definite in `.env` (copia da `.env.example`):
+
+| Variabile | Default | Descrizione |
+| --- | --- | --- |
+| `GOOGLE_MAPS_API_KEY` | — | **Obbligatoria.** Chiave Google Maps |
+| `MCP_SERVER_PORT` | `3000` | Porta del trasporto HTTP |
+| `MCP_SERVER_HOST` | `0.0.0.0` | Interfaccia di bind HTTP (usare `127.0.0.1` per esposizione solo locale) |
+| `GOOGLE_MAPS_ENABLED_TOOLS` | `*` | Allowlist separata da virgole dei tool esposti (riduce il contesto per l'LLM). Esempio: `maps_search_places,maps_place_details,maps_geocode` |
+
+## Trasporti
+
+### stdio (predefinito per client locali)
+
+```bash
+scripts/start-mcp.sh            # node dist/cli.js --stdio
+```
+
+stdout è riservato ai messaggi JSON-RPC; tutti i log del server vanno su stderr.
+
+### Streamable HTTP
+
+```bash
+scripts/start-http.sh                       # http://127.0.0.1:3000/mcp
+MCP_SERVER_PORT=8123 scripts/start-http.sh  # porta personalizzata
+scripts/start-http.sh --port 8123 --host 0.0.0.0
+```
+
+Ogni sessione MCP (`mcp-session-id`) può ricevere una API key propria via header `X-Goog-Api-Key`: le chiamate dei tool usano la chiave della sessione, non quella globale.
+
+## Comandi CLI
+
+```bash
+node dist/cli.js --stdio                                # server stdio
+node dist/cli.js --port 3000 --host 127.0.0.1           # server HTTP
+node dist/cli.js exec search-places --query "pizzeria Torino"   # chiama un tool da terminale
+node dist/cli.js doctor --live --apikey "AIza..."       # diagnostica ambiente + chiamate reali
+```
+
+## Diagnostica
+
+```bash
+node dist/cli.js doctor
+```
+
+Verifica versione Node, presenza della API key e (con `--live`) effettua chiamate reali ai servizi Google.
