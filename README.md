@@ -41,8 +41,44 @@ TODO: correct e complete the document according the above menu, change the menu 
 ## Requisiti
 
 - Node.js **>= 22**
-- Una **Google Maps API key** con i servizi necessari abilitati (minimo per la ricerca locali: **Places API (New)**)
-  — <https://console.cloud.google.com/apis/library>
+- Una **Google Maps API key** (<https://console.cloud.google.com/apis/credentials>) con i servizi abilitati — vedi sotto
+
+## API Google Cloud richieste
+
+Mappatura verificata sui sorgenti: ogni endpoint usato dal server e il tool che lo richiede.
+
+| # | API da abilitare | Endpoint usato dal server | Tool che la richiedono | Necessaria per | Priorità GeoScout |
+|---|---|---|---|---|---|
+| 1 | **Places API (New)** | `places.googleapis.com` (`places:searchText`, `places:searchNearby`, `GET places/{id}`, photo media) via `@googlemaps/places` | `maps_search_places`, `maps_search_nearby`, `maps_place_details`, `maps_explore_area`, `maps_compare_places`, `maps_search_along_route`, `maps_local_rank_tracker` | Ricerca/dettaglio locali, filtri `priceLevels`/`minRating`, `priceRange`, orari | **Obbligatoria** |
+| 2 | **Geocoding API** | `maps.googleapis.com/maps/api/geocode/json` via `@googlemaps/google-maps-services-js` | `maps_geocode`, `maps_reverse_geocode`, `maps_batch_geocode` (+ fallback interno di risoluzione indirizzi) | Conversione indirizzo ↔ coordinate | Alta |
+| 3 | **Routes API** | `routes.googleapis.com` (`computeRoutes`, `computeRouteMatrix`) | `maps_directions`, `maps_distance_matrix`, `maps_plan_route` | Percorsi e matrice distanze | Media |
+| 4 | **Time Zone API** | `maps.googleapis.com/maps/api/timezone/json` | `maps_timezone` | Fuso orario / ora locale | Bassa |
+| 5 | **Maps Elevation API** *(in console: "Maps Elevation API", servizio `elevation-backend`)* | `maps.googleapis.com/maps/api/elevation/json` | `maps_elevation` | Quota del terreno | Bassa |
+| 6 | **Maps Static API** | `maps.googleapis.com/maps/api/staticmap` | `maps_static_map` | Immagine mappa PNG | Bassa |
+| 7 | **Weather API** | `weather.googleapis.com/v1` (current, forecast/days, forecast/hours) | `maps_weather` | Meteo corrente/previsioni | Bassa (disponibilità regionale) |
+| 8 | **Air Quality API** | `airquality.googleapis.com/v1/currentConditions:lookup` | `maps_air_quality` | Qualità dell'aria | Bassa (disponibilità regionale) |
+
+Abilitazione rapida (progetto GCP corrente):
+
+```bash
+PROJECT=iltuoprogetto
+gcloud services enable places-backend-new.googleapis.com \
+  geocoding-backend.googleapis.com \
+  routes.googleapis.com \
+  timezone-backend.googleapis.com \
+  elevation-backend.googleapis.com \
+  static-maps-backend.googleapis.com \
+  weather-backend.googleapis.com \
+  airquality.googleapis.com --project=$PROJECT
+```
+
+### Note
+
+- Per l'uso minimo/GeoScout bastano **Places API (New)** + **Geocoding API**; le altre si abilitano solo se si usano i tool corrispondenti (in alternativa limitare l'esposizione con `GOOGLE_MAPS_ENABLED_TOOLS`).
+- **Maps Grounding Lite** e **Geolocation API** **non sono richieste** da questo server: la prima serve all'MCP hosted di Google (`mapstools.googleapis.com`), la seconda non è usata da nessun tool (non c'è `ip_geolocate` in questo fork).
+- La vecchia **Places API** (legacy) non è necessaria: il server usa esclusivamente Places API (New).
+- Weather API e Air Quality API hanno copertura regionale limitata: fuori copertura il tool restituisce errore dell'API.
+
 
 ## Avvio rapido
 

@@ -74,8 +74,22 @@ test("searchTextFull forwards GeoScout filters (priceLevels, strictTypeFiltering
   assert.equal(request.strictTypeFiltering, true);
   assert.equal(request.minRating, 4.5);
   assert.deepEqual(request.priceLevels, ["PRICE_LEVEL_INEXPENSIVE", "PRICE_LEVEL_MODERATE"]);
-  assert.equal(request.pageSize, 10);
+  assert.equal(request.maxResultCount, 10);
   assert.equal(request.includedTypes, undefined, "Text Search must use singular includedType");
+});
+
+// See the NOTE ON PAGINATION in NewPlacesService.searchTextFull: page_size is
+// not part of the SearchTextRequest proto shipped with @googlemaps/places, so
+// pageSize must be translated to maxResultCount to take effect.
+test("pageSize is translated to maxResultCount (SDK proto lacks page_size)", async () => {
+  const { calls, client } = mockSearchClient({ places: [SEARCH_TEXT_PLACE] });
+  const service = new NewPlacesService("test-key");
+  (service as unknown as { client: any }).client = client;
+
+  await service.searchTextFull({ textQuery: "trattoria Torino", pageSize: 8 });
+  const request = calls[0].request;
+  assert.equal(request.maxResultCount, 8);
+  assert.equal(request.pageSize, undefined, "page_size is dropped by the SDK proto");
 });
 
 test("searchTextFull sends a field mask covering all GeoScout validation fields and pagination", async () => {

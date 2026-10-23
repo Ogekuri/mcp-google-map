@@ -14,7 +14,7 @@ Questo server implementa tutti i requisiti strutturali del protocollo di ricerca
 | §6 categorie | `primary_type` (valore originale, es. `italian_restaurant`) + `types` completi, mai normalizzati |
 | §7 orari | FieldMask include `regularOpeningHours.periods` e `currentOpeningHours.periods` (+ descrizioni giorni) |
 | §9.1 parametri ricerca | `query` (`textQuery`), `includedType` **singolare**, `strictTypeFiltering`, `minRating`, `priceLevels`, `locationBias`, `pageSize` |
-| §9 paginazione | `pageSize` (1–20) + `pageToken`/`nextPageToken`, fino a 60 risultati; deduplica per Place ID a carico dell'agente |
+| §9 paginazione | `pageSize` (1–20) + `pageToken`/`nextPageToken`, fino a 60 risultati; **limite SDK verificato**: il proto di `@googlemaps/places` (fino a 3.1.0) non serializza `page_size`/`page_token` → `pageSize` viene tradotto in `maxResultCount`, niente `nextPageToken`; usare più query per Grade |
 | §9 Place Details | `maps_place_details` (`GET places/{id}`) per la verifica individuale dei candidati |
 | §10 FieldMask obbligatoria | Text Search: `places.id, displayName, formattedAddress, location, primaryType, types, businessStatus, googleMapsUri, priceLevel, priceRange, rating, userRatingCount, regularOpeningHours.periods, regularOpeningHours.weekdayDescriptions, currentOpeningHours.openNow, currentOpeningHours.periods, currentOpeningHours.weekdayDescriptions, nextPageToken`. Details: include inoltre contatti, sito, recensioni, foto, priceRange, businessStatus |
 | §11.2 niente ricostruzione raw | `includeRaw: true` → ogni risultato porta `raw_place` (payload originale dell'API) e la risposta include `raw_response` completo; i campi interpretati (`price_range`, `total_ratings`, …) sono distinti dal raw |

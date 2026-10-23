@@ -17,7 +17,7 @@ Text Search (New) con **filtri server-side** — è il tool principale per ricer
 | `strictTypeFiltering` | boolean | Matching rigoroso di `includedType` |
 | `openNow` | boolean | Solo locali attualmente aperti |
 | `locationBias` | oggetto | `{ latitude, longitude, radius? }` (raggio in metri, default 5000) |
-| `pageSize` | 1–20 | Risultati per pagina; fino a 60 totali via `nextPageToken` |
+| `pageSize` | 1–20 | Tetto risultati per chiamata (tradotto in `maxResultCount`). Nota SDK: il proto di `@googlemaps/places` (fino a 3.1.0) non include `page_size`/`page_token` → **paginazione oltre 20 risultati/chiamata non disponibile**; per più risultati usare query diverse |
 | `pageToken` | string | Token della pagina successiva |
 | `languageCode` | string | Lingua risultati (`it`, `en`, …) |
 | `includeRaw` | boolean | Allega il payload originale: `raw_place` per ogni risultato, `raw_response` dell'intera pagina e la `field_mask` realmente inviata |

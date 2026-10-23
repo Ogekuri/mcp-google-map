@@ -4,14 +4,18 @@
 
 Ottieni una chiave da <https://console.cloud.google.com/apis/credentials> e abilita sulla chiave i servizi che usi:
 
-| Servizio console | Tool che lo richiedono |
-| --- | --- |
-| **Places API (New)** | `maps_search_places`, `maps_search_nearby`, `maps_place_details`, `maps_explore_area`, `maps_compare_places`, `maps_search_along_route`, `maps_local_rank_tracker` |
-| Geocoding API | `maps_geocode`, `maps_reverse_geocode`, `maps_batch_geocode` |
-| Routes API | `maps_directions`, `maps_distance_matrix`, `maps_plan_route` |
-| Elevation API | `maps_elevation` |
-| Air Quality API | `maps_air_quality` |
-| Weather API | `maps_weather` |
+| Servizio console (nome API) | Tool che lo richiedono | Note |
+| --- | --- | --- |
+| **Places API (New)** (`places-backend-new`) | `maps_search_places`, `maps_search_nearby`, `maps_place_details`, `maps_explore_area`, `maps_compare_places`, `maps_search_along_route`, `maps_local_rank_tracker` | Obbligatoria per GeoScout; unica API di ricerca locali usata dal server |
+| **Geocoding API** (`geocoding-backend`) | `maps_geocode`, `maps_reverse_geocode`, `maps_batch_geocode` | Anche fallback interno di risoluzione indirizzi |
+| **Routes API** (`routes`) | `maps_directions`, `maps_distance_matrix`, `maps_plan_route` | |
+| **Time Zone API** (`timezone-backend`) | `maps_timezone` | |
+| **Maps Elevation API** (`elevation-backend`) | `maps_elevation` | In console appare come "Maps Elevation API" |
+| **Maps Static API** (`static-maps-backend`) | `maps_static_map` | Immagine PNG | |
+| **Weather API** (`weather-backend`) | `maps_weather` | Copertura regionale limitata |
+| **Air Quality API** (`airquality`) | `maps_air_quality` | Copertura regionale limitata |
+
+Non richieste da questo server: **Maps Grounding Lite** (solo MCP hosted Google) e **Geolocation API** (nessun tool la usa). L'elenco completo con priorità è in [README.md](../README.md#api-google-cloud-richieste).
 
 La chiave può essere fornita in tre modi (priorità decrescente):
 

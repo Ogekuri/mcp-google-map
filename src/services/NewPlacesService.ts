@@ -227,13 +227,16 @@ export class NewPlacesService {
         languageCode: params.languageCode || this.defaultLanguage,
       };
 
-      // pageSize is the preferred pagination parameter (1-20 results per
-      // page, up to 60 total via nextPageToken); maxResultCount is kept as a
-      // fallback for callers that still use it.
-      if (params.pageSize) {
-        request.pageSize = Math.min(Math.max(1, Math.round(params.pageSize)), 20);
-      } else {
-        request.maxResultCount = Math.min(params.maxResultCount || 10, 20);
+      // NOTE ON PAGINATION: the SearchTextRequest proto shipped with
+      // @googlemaps/places (verified up to v3.1.0) does not include
+      // page_size/page_token, so those fields are silently dropped during
+      // protobuf serialization. maxResultCount (1-20) is the effective result
+      // limiter available with the official SDK; pageSize is accepted as an
+      // alias and translated to maxResultCount.
+      const requestedCount = params.pageSize ?? params.maxResultCount ?? 10;
+      request.maxResultCount = Math.min(Math.max(1, Math.round(requestedCount)), 20);
+      if (params.pageToken) {
+        request.pageToken = params.pageToken; // forwarded; dropped by current SDK protos
       }
 
       if (params.locationBias) {
