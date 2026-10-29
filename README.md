@@ -1,17 +1,14 @@
-# mcp-google-map (0.0.0)
+# mcp-google-map (0.1.0)
 
 <p align="center">
-  <img src="https://img.shields.io/badge/python-3.11%2B-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python 3.11+">
+  <img src="https://img.shields.io/badge/node-%3E%3D22-339933?style=flat-square&logo=nodedotjs&logoColor=white" alt="Node.js >= 22">
+  <img src="https://img.shields.io/badge/typescript-5.7-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript 5.7">
   <img src="https://img.shields.io/badge/license-GPL--3.0-491?style=flat-square" alt="License: GPL-3.0">
   <img src="https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-6A7EC2?style=flat-square&logo=terminal&logoColor=white" alt="Platforms">
-  <img src="https://img.shields.io/badge/docs-live-b31b1b" alt="Docs">
-<img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json" alt="uv">
 </p>
 
-TODO: correct and complete the project descriptions
-
 <p align="center">
-<strong>mcp-google-map is a ...</strong><br>
+<strong>Google Maps Platform MCP server — 18 tools for AI agents (stdio + Streamable HTTP)</strong><br>
 Server [Model Context Protocol](https://modelcontextprotocol.io) per **Google Maps Platform**, con 18 tool per agenti AI: ricerca Places API (New) con **filtri server-side** (`priceLevels`, `minRating`, `strictTypeFiltering`), paginazione nativa, accesso al **payload raw** delle risposte API, geocoding, indicazioni, matrice delle distanze e altro.
 
 Trasporti supportati: **stdio** (client MCP locali) e **Streamable HTTP**.
@@ -21,10 +18,12 @@ Trasporti supportati: **stdio** (client MCP locali) e **Streamable HTTP**.
 </p>
 
 <p align="center">
-  <a href="#quick-start">Quick Start</a> |
-  <a href="#requirements">Requirements</a> |
   <a href="#feature-highlights">Feature Highlights</a> |
-  <a href="#install-uninstall">Install/Uninstall</a>
+  <a href="#requisiti">Requirements</a> |
+  <a href="#install">Install / Uninstall</a> |
+  <a href="#avvio-rapido">Quick Start</a> |
+  <a href="#registrazione-in-un-client-mcp">MCP Clients</a> |
+  <a href="#documentazione">Docs</a>
 </p>
 <p align="center">
 <br>
@@ -34,9 +33,15 @@ Trasporti supportati: **stdio** (client MCP locali) e **Streamable HTTP**.
 <p>
 
 
-TODO: correct e complete the document according the above menu, change the menu if needed
+## Feature Highlights
 
-
+- **18 Google Maps MCP tools** — geocoding, reverse geocoding, Places API (New) text/nearby search, place details, directions, distance matrix, elevation, timezone, weather, air quality, static maps, batch geocode, plus composite tools (explore-area, plan-route, compare-places, search-along-route, local-rank-tracker). Full catalog: [docs/TOOLS.md](docs/TOOLS.md).
+- **Server-side Places filters** — `priceLevels`, `minRating`, `openNow`, `strictTypeFiltering`, and location bias are forwarded to Places API (New), not emulated client-side.
+- **Raw API payloads** — searches and details can return the untouched Google response (`includeRaw: true`) with explicit Field Masks.
+- **Two transports** — stdio for local MCP clients (pi, Claude Desktop, Cursor, ...) and Streamable HTTP at `/mcp` with per-session API keys.
+- **Per-request credentials** — key resolution from `X-Google-Maps-API-Key` or `Authorization: Bearer` headers, session key, or `GOOGLE_MAPS_API_KEY` environment.
+- **Standalone CLI** — `doctor` self-checks, `exec <tool>` one-shot calls, `batch-geocode` with bounded concurrency.
+- **GeoScout 6.2 compatible** — see [docs/GEOSCOUT.md](docs/GEOSCOUT.md).
 
 ## Requisiti
 
@@ -79,6 +84,52 @@ gcloud services enable places-backend-new.googleapis.com \
 - La vecchia **Places API** (legacy) non è necessaria: il server usa esclusivamente Places API (New).
 - Weather API e Air Quality API hanno copertura regionale limitata: fuori copertura il tool restituisce errore dell'API.
 
+
+## Install
+
+**Prerequisites**: Node.js **>= 22** and a Google Maps API key (see [Requisiti](#requisiti)).
+
+### From npm (once published)
+
+```bash
+npm install -g mcp-google-map
+mcp-google-map doctor               # self-check (no API calls)
+npx -y mcp-google-map --stdio       # one-shot stdio server, no global install
+```
+
+### From source (this repository) — cross-platform, no bash required
+
+```bash
+git clone https://github.com/Ogekuri/mcp-google-map.git
+cd mcp-google-map
+npm install
+npm run build                       # tsup -> dist/ (ESM)
+node dist/cli.js --stdio            # MCP server over stdio
+node dist/cli.js --host 127.0.0.1 --port 3000   # Streamable HTTP at /mcp
+```
+
+On Linux/macOS the bash helpers in `scripts/` automate the same steps (`scripts/setup.sh`, `scripts/build.sh`, `scripts/start-mcp.sh`, `scripts/start-http.sh`, `scripts/test.sh`); on Windows use the `npm`/`node` commands above.
+
+MCP client registration over stdio works cross-platform with plain `node`:
+
+```json
+{
+  "mcpServers": {
+    "mcp-google-map": {
+      "command": "node",
+      "args": ["/absolute/path/to/mcp-google-map/dist/cli.js", "--stdio"],
+      "env": { "GOOGLE_MAPS_API_KEY": "AIza..." }
+    }
+  }
+}
+```
+
+## Uninstall
+
+```bash
+npm uninstall -g mcp-google-map    # npm-based install
+rm -rf mcp-google-map              # from-source clone; also remove any MCP client registration
+```
 
 ## Avvio rapido
 

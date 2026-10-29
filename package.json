@@ -1,6 +1,6 @@
 {
   "name": "mcp-google-map",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Google Maps MCP server — 18 tools for AI agents: geocoding, Places API (New) search with server-side filters, directions, distance matrix and more, via stdio or Streamable HTTP",
   "type": "module",
   "main": "dist/index.js",
@@ -19,7 +19,8 @@
     "start": "node dist/cli.js",
     "typecheck": "tsc --noEmit",
     "test": "tsx --test tests/*.unit.test.ts",
-    "test:e2e": "tsx tests/smoke.test.ts"
+    "test:e2e": "tsx tests/smoke.test.ts",
+    "prepublishOnly": "npm run typecheck && npm test && npm run build"
   },
   "engines": {
     "node": ">=22"

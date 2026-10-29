@@ -8,7 +8,7 @@ This document MUST follow these authoring rules (LLM-first, normative SRS):
 - Use RFC 2119 keywords exclusively (MUST, MUST NOT, SHOULD, SHOULD NOT, MAY). Do not use "shall".
 - In requirements sections, every bullet MUST be a requirement and MUST start with a unique, stable Requirement ID (e.g., **REQ-001**).
 - Requirement IDs MUST be stable: never renumber, reuse, or repurpose an ID. Only the dedicated reorganization workflow may renumber and it MUST emit an old→new ID mapping.
-- Requirement ID prefixes MUST be consistent; this document uses: PRJ (project function), CTN (project constraint), DES (design/implementation constraint), REQ (observable function), TST (test requirement).
+- Requirement ID prefixes MUST be consistent; this document uses: PRJ (project function), CTN (project constraint), DES (design/implementation constraint), REQ (observable function), TST (test requirement), PKG (packaging and publication).
 - Each requirement MUST be atomic, single-sentence, and testable; target <= 35 words per requirement; split any compound behavior into separate IDs.
 - Write for other LLM Agents and automated parsers (high semantic density; no filler).
 - On every change to this document:
@@ -22,6 +22,7 @@ Project file/folder structure (evidence: repository tree):
 
 ```
 mcp-google-map/
+├── .github/workflows/           # GitHub Actions: ci.yml (push/PR checks), release.yml (tag releases)
 ├── docs/                        # Usage docs (CONFIGURATION.md, TOOLS.md, GEOSCOUT.md)
 ├── scripts/                     # Shell helpers: build.sh, setup.sh, start-http.sh, start-mcp.sh, test.sh
 ├── src/
@@ -77,6 +78,16 @@ Components and libraries (evidence: `package.json` `dependencies`/`devDependenci
 - **CTN-006**: MUST build and run as ECMAScript Modules only (`"type": "module"`, tsup ESM output).
 - **CTN-007**: MUST load `.env` from the current working directory first, then from the package installation directory (`src/cli.ts`).
 - **CTN-008**: MUST NOT use any database or file-based persistence; all state is in-memory per process.
+
+### 2.3 Packaging and Publication
+- **PKG-001**: MUST keep `README.md` free of placeholder markers and of badges that do not match the Node.js runtime declared in `package.json` `engines`.
+- **PKG-002**: MUST resolve every `README.md` navigation-menu anchor to an existing section heading in the same document.
+- **PKG-003**: MUST document in `README.md` at least three installation paths: npm package install, one-shot `npx` execution, and cross-platform manual commands equivalent to the bash helper scripts.
+- **PKG-004**: MUST run a GitHub Actions CI workflow on push and pull_request that installs dependencies with the lockfile, runs typecheck, and runs unit tests excluding live e2e tests.
+- **PKG-005**: MUST define a `prepublishOnly` script in `package.json` that runs typecheck, unit tests, and build before any `npm publish`.
+- **PKG-006**: MUST set one identical non-`0.0.0` semantic version across `package.json`, `package-lock.json`, and the `README.md` title for every published release.
+- **PKG-007**: MUST print only the distribution package name `mcp-google-map` in user-facing doctor messages.
+- **PKG-008**: SHOULD provide a GitHub Actions release workflow that verifies, builds, and attaches the npm package tarball to a GitHub Release on version tags.
 
 ## 3. Requirements
 

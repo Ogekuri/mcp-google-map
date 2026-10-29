@@ -341,7 +341,7 @@ export async function runDoctor(
       status: packageVersion !== "0.0.0" ? "pass" : "fail",
       detail:
         packageVersion !== "0.0.0"
-          ? `@cablate/mcp-google-map ${packageVersion} is available.`
+          ? `mcp-google-map ${packageVersion} is available.`
           : "Could not read the installed package version.",
     },
     {
