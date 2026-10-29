@@ -54,6 +54,42 @@ scripts/start-http.sh --port 8123 --host 0.0.0.0
 
 Ogni sessione MCP (`mcp-session-id`) può ricevere una API key propria via header `X-Goog-Api-Key`: le chiamate dei tool usano la chiave della sessione, non quella globale.
 
+## Registrazione nei client MCP
+
+### pi CLI
+
+Voce stdio per `~/.pi/agent/mcp.json` (utente) o `.pi/mcp.json` (progetto, richiede trust):
+
+```json
+{
+  "mcpServers": {
+    "maps": {
+      "command": "node",
+      "args": ["/percorso/assoluto/a/mcp-google-map/dist/cli.js", "--stdio"],
+      "env": { "GOOGLE_MAPS_API_KEY": "${GOOGLE_MAPS_API_KEY}" }
+    }
+  }
+}
+```
+
+- `${VAR}` espande variabili d'ambiente: la chiave non resta cablata nel file di configurazione.
+- `pi mcp add maps -- node /percorso/assoluto/a/mcp-google-map/dist/cli.js --stdio` registra da terminale; `/reload` in sessione dopo modifiche esterne; `/mcp` ispeziona la connessione.
+
+### OpenClaw
+
+```bash
+openclaw mcp set maps '{"command":"node","args":["/percorso/assoluto/a/mcp-google-map/dist/cli.js","--stdio"],"env":{"GOOGLE_MAPS_API_KEY":"AIza..."},"description":"Google Maps MCP"}'
+```
+
+- Alternativa senza installazione: `"command":"npx","args":["-y","mcp-google-map","--stdio"]`.
+- Ricaricare il gateway o riavviare la sessione agente dopo la modifica; `openclaw mcp list` / `openclaw mcp show maps` per verificare.
+
+### Prerequisiti chiave e API Google
+
+- **Una sola chiave** `GOOGLE_MAPS_API_KEY` (priorità di risoluzione in [Google Maps API key](#google-maps-api-key)); servizi da abilitare e sottoinsieme minimo (Places API (New) + Geocoding API): tabella in [README.md](../README.md#api-google-cloud-richieste).
+- Limitare i tool esposti con [`GOOGLE_MAPS_ENABLED_TOOLS`](#variabili-dambiente).
+- Verifica post-installazione: `node dist/cli.js doctor` e `node dist/cli.js doctor --live --apikey "AIza..."`.
+
 ## Comandi CLI
 
 ```bash

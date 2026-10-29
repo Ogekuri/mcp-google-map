@@ -89,7 +89,7 @@ gcloud services enable places-backend-new.googleapis.com \
 
 **Prerequisites**: Node.js **>= 22** and a Google Maps API key (see [Requisiti](#requisiti)).
 
-### From npm (once published)
+### From npm
 
 ```bash
 npm install -g mcp-google-map
@@ -169,6 +169,47 @@ scripts/test.sh         # test unitari (nessuna API key richiesta)
   }
 }
 ```
+
+### pi CLI
+
+pi legge i server MCP da `~/.pi/agent/mcp.json` (utente) o `.pi/mcp.json` (progetto, richiede trust). Voce stdio per questo server:
+
+```json
+{
+  "mcpServers": {
+    "maps": {
+      "command": "node",
+      "args": ["/percorso/assoluto/a/mcp-google-map/dist/cli.js", "--stdio"],
+      "env": { "GOOGLE_MAPS_API_KEY": "${GOOGLE_MAPS_API_KEY}" }
+    }
+  }
+}
+```
+
+- Da terminale: `pi mcp add maps -- node /percorso/assoluto/a/mcp-google-map/dist/cli.js --stdio` (aggiungere `--env GOOGLE_MAPS_API_KEY=...` per la chiave).
+- `${GOOGLE_MAPS_API_KEY}` espande la variabile d'ambiente al volo: la chiave non resta cablata nel file di configurazione.
+- Dopo una modifica di `mcp.json` esterna alla sessione, eseguire `/reload` in pi; `/mcp` ispeziona stato, tool ed errori di connessione.
+- I tool appaiono con il prefisso `mcp__<server>__`: `mcp__maps__maps_geocode`, `mcp__maps__maps_search_places`, ...
+
+### OpenClaw
+
+OpenClaw gestisce i server MCP in `~/.openclaw/openclaw.json` tramite CLI (verificato su OpenClaw 2026.4.21):
+
+```bash
+openclaw mcp set maps '{"command":"node","args":["/percorso/assoluto/a/mcp-google-map/dist/cli.js","--stdio"],"env":{"GOOGLE_MAPS_API_KEY":"AIza..."},"description":"Google Maps: Places API (New), geocoding, routes, weather"}'
+```
+
+- Senza installazione locale: usare `"command":"npx","args":["-y","mcp-google-map","--stdio"]` (esegue il pacchetto npm pubblicato).
+- Dopo la modifica ricaricare il gateway o riavviare la sessione agente perché il nuovo server venga collegato.
+- Ispezione e rimozione: `openclaw mcp list`, `openclaw mcp show maps`, `openclaw mcp unset maps`.
+- L'agente OpenClaw può installare e configurare il server in autonomia (shell + `openclaw mcp set`); la creazione della API key su Google Cloud Console resta un'operazione umana.
+
+### Prerequisiti di configurazione
+
+1. **Una sola API key**: crea `GOOGLE_MAPS_API_KEY` su <https://console.cloud.google.com/apis/credentials> e abilita i servizi elencati nella tabella [API Google Cloud richieste](#api-google-cloud-richieste).
+2. **Minimo operativo**: Places API (New) + Geocoding API; abilitare gli altri servizi solo per i tool corrispondenti.
+3. **Limitare l'esposizione**: `GOOGLE_MAPS_ENABLED_TOOLS=maps_geocode,maps_search_places,maps_place_details` riduce i tool registrati (e il contesto per l'LLM).
+4. **Verifica post-installazione**: `mcp-google-map doctor` (nessuna chiamata di rete), poi `mcp-google-map doctor --live --apikey "AIza..."` (probe reali su Geocoding, Places, Routes).
 
 ## Struttura del progetto
 

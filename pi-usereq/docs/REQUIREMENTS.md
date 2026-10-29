@@ -94,6 +94,8 @@ Components and libraries (evidence: `package.json` `dependencies`/`devDependenci
 - **PKG-012**: MUST attach the npm package tarball (not raw sources) as the GitHub Release asset, failing the release on unmatched files.
 - **PKG-013**: MUST disable GitHub auto-generated release notes when the commit-based changelog is used.
 - **PKG-014**: MUST pin the release Node.js version and disable dependency caching in release builds.
+- **PKG-015**: MUST document in `README.md` and `docs/CONFIGURATION.md` MCP-client registration for pi CLI and OpenClaw with complete working stdio examples, including key-expansion and post-change reload notes.
+- **PKG-016**: MUST document configuration prerequisites in `README.md` and `docs/CONFIGURATION.md`: single `GOOGLE_MAPS_API_KEY`, enabled Google services, minimal operational subset, `GOOGLE_MAPS_ENABLED_TOOLS`, and post-install `doctor` verification.
 
 ## 3. Requirements
 
