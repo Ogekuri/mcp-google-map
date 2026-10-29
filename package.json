@@ -20,7 +20,8 @@
     "typecheck": "tsc --noEmit",
     "test": "tsx --test tests/*.unit.test.ts",
     "test:e2e": "tsx tests/smoke.test.ts",
-    "prepublishOnly": "npm run typecheck && npm test && npm run build"
+    "check:publish-version": "node scripts/check-publish-version.mjs",
+    "prepublishOnly": "npm run check:publish-version && npm run typecheck && npm test && npm run build"
   },
   "engines": {
     "node": ">=22"

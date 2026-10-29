@@ -96,6 +96,7 @@ Components and libraries (evidence: `package.json` `dependencies`/`devDependenci
 - **PKG-014**: MUST pin the release Node.js version and disable dependency caching in release builds.
 - **PKG-015**: MUST document in `README.md` and `docs/CONFIGURATION.md` MCP-client registration for pi CLI and OpenClaw with complete working stdio examples, including key-expansion and post-change reload notes.
 - **PKG-016**: MUST document configuration prerequisites in `README.md` and `docs/CONFIGURATION.md`: single `GOOGLE_MAPS_API_KEY`, enabled Google services, minimal operational subset, `GOOGLE_MAPS_ENABLED_TOOLS`, and post-install `doctor` verification.
+- **PKG-017**: MUST fail `npm publish` via the `prepublishOnly` guard when the `package.json` version is `0.0.0`-based or carries a prerelease or build suffix.
 
 ## 3. Requirements
 
