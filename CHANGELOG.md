@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.3.0](https://github.com/Ogekuri/mcp-google-map/compare/v0.2.0..v0.3.0) - 2026-10-29
+### 🚜  Changes
+- document pi CLI and OpenClaw MCP registration and Google API prerequisites [useReq] *(docs)*
+  - Add PKG-015/PKG-016: MCP client registration docs and configuration
+  - prerequisites for pi CLI and OpenClaw in README and CONFIGURATION
+  - README: fix stale 'From npm (once published)', add pi CLI, OpenClaw
+  - and configuration-prerequisites sections linked to the Google API table
+  - docs/CONFIGURATION.md: add 'Registrazione nei client MCP' section
+  - No source or test changes; typecheck and 41 unit tests pass
+
 ## [0.2.0](https://github.com/Ogekuri/mcp-google-map/releases/tag/v0.2.0) - 2026-10-29
 ### ⛰️  Features
 - Initial Commit.
@@ -40,5 +50,7 @@
 # History
 
 - \[0.2.0\]: https://github.com/Ogekuri/mcp-google-map/releases/tag/v0.2.0
+- \[0.3.0\]: https://github.com/Ogekuri/mcp-google-map/releases/tag/v0.3.0
 
 [0.2.0]: https://github.com/Ogekuri/mcp-google-map/releases/tag/v0.2.0
+[0.3.0]: https://github.com/Ogekuri/mcp-google-map/compare/v0.2.0..v0.3.0
