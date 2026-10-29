@@ -87,7 +87,13 @@ Components and libraries (evidence: `package.json` `dependencies`/`devDependenci
 - **PKG-005**: MUST define a `prepublishOnly` script in `package.json` that runs typecheck, unit tests, and build before any `npm publish`.
 - **PKG-006**: MUST set one identical non-`0.0.0` semantic version across `package.json`, `package-lock.json`, and the `README.md` title for every published release.
 - **PKG-007**: MUST print only the distribution package name `mcp-google-map` in user-facing doctor messages.
-- **PKG-008**: SHOULD provide a GitHub Actions release workflow that verifies, builds, and attaches the npm package tarball to a GitHub Release on version tags.
+- **PKG-008**: MUST trigger the release workflow only on pushed tags matching `v[0-9]+.[0-9]+.[0-9]+` whose commit is reachable from `master`, publishing the verified build.
+- **PKG-009**: MUST gate release jobs on a branch check that requires the tagged commit on `origin/master` before any build or publish step.
+- **PKG-010**: MUST publish the package to npm from the release workflow with provenance attestation and `--access public` using `NPM_TOKEN`.
+- **PKG-011**: MUST generate the GitHub Release body from a commit-based changelog (`mode: COMMIT`) categorizing commits by conventional-commit title prefix, with the category set, ignore labels, transformer, ASC `mergedAt` sort, and compare-link template.
+- **PKG-012**: MUST attach the npm package tarball (not raw sources) as the GitHub Release asset, failing the release on unmatched files.
+- **PKG-013**: MUST disable GitHub auto-generated release notes when the commit-based changelog is used.
+- **PKG-014**: MUST pin the release Node.js version and disable dependency caching in release builds.
 
 ## 3. Requirements
 
