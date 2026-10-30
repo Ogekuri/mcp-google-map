@@ -9,21 +9,22 @@
 
 <p align="center">
 <strong>Google Maps Platform MCP server — 18 tools for AI agents (stdio + Streamable HTTP)</strong><br>
-Server [Model Context Protocol](https://modelcontextprotocol.io) per **Google Maps Platform**, con 18 tool per agenti AI: ricerca Places API (New) con **filtri server-side** (`priceLevels`, `minRating`, `strictTypeFiltering`), paginazione nativa, accesso al **payload raw** delle risposte API, geocoding, indicazioni, matrice delle distanze e altro.
+A [Model Context Protocol](https://modelcontextprotocol.io) server for **Google Maps Platform** with 18 tools for AI agents: Places API (New) search with **server-side filters** (`priceLevels`, `minRating`, `strictTypeFiltering`), raw API payload access, geocoding, directions, distance matrix, and more.
 
-Trasporti supportati: **stdio** (client MCP locali) e **Streamable HTTP**.
+Supported transports: **stdio** (local MCP clients) and **Streamable HTTP**.
 
-> Compatibile con il protocollo di ricerca **GeoScout 6.2** — vedi [docs/GEOSCOUT.md](docs/GEOSCOUT.md).
+> Compatible with the **GeoScout 6.2** search protocol — see [docs/GEOSCOUT.md](docs/GEOSCOUT.md).
 
 </p>
 
 <p align="center">
   <a href="#feature-highlights">Feature Highlights</a> |
-  <a href="#requisiti">Requirements</a> |
+  <a href="#requirements">Requirements</a> |
   <a href="#install">Install / Uninstall</a> |
-  <a href="#avvio-rapido">Quick Start</a> |
-  <a href="#registrazione-in-un-client-mcp">MCP Clients</a> |
-  <a href="#documentazione">Docs</a>
+  <a href="#quick-start">Quick Start</a> |
+  <a href="#command-line-interface">CLI</a> |
+  <a href="#registering-in-an-mcp-client">MCP Clients</a> |
+  <a href="#documentation">Docs</a>
 </p>
 <p align="center">
 <br>
@@ -36,37 +37,38 @@ Trasporti supportati: **stdio** (client MCP locali) e **Streamable HTTP**.
 ## Feature Highlights
 
 - **18 Google Maps MCP tools** — geocoding, reverse geocoding, Places API (New) text/nearby search, place details, directions, distance matrix, elevation, timezone, weather, air quality, static maps, batch geocode, plus composite tools (explore-area, plan-route, compare-places, search-along-route, local-rank-tracker). Full catalog: [docs/TOOLS.md](docs/TOOLS.md).
-- **Server-side Places filters** — `priceLevels`, `minRating`, `openNow`, `strictTypeFiltering`, and location bias are forwarded to Places API (New), not emulated client-side.
+- **Server-side Places filters** — `priceLevels`, `minRating`, `openNow`, `includedType`, `strictTypeFiltering`, and location bias are forwarded to Places API (New) as request fields by `maps_search_places`; in `maps_search_nearby`, `openNow` and `minRating` are applied after the query, so filters can return fewer than 20 results.
 - **Raw API payloads** — searches and details can return the untouched Google response (`includeRaw: true`) with explicit Field Masks.
 - **Two transports** — stdio for local MCP clients (pi, Claude Desktop, Cursor, ...) and Streamable HTTP at `/mcp` with per-session API keys.
 - **Per-request credentials** — key resolution from `X-Google-Maps-API-Key` or `Authorization: Bearer` headers, session key, or `GOOGLE_MAPS_API_KEY` environment.
 - **Standalone CLI** — `doctor` self-checks, `exec <tool>` one-shot calls, `batch-geocode` with bounded concurrency.
+- **Automatic update check** — at server startup the server compares its version against the latest npm release and prints an upgrade notice on stderr; it never blocks startup and can be disabled with `MCP_AUTO_UPDATE_DISABLED=1` (see [Configuration prerequisites](#configuration-prerequisites)).
 - **GeoScout 6.2 compatible** — see [docs/GEOSCOUT.md](docs/GEOSCOUT.md).
 
-## Requisiti
+## Requirements
 
 - Node.js **>= 22**
-- Una **Google Maps API key** (<https://console.cloud.google.com/apis/credentials>) con i servizi abilitati — vedi sotto
+- A **Google Maps API key** (<https://console.cloud.google.com/apis/credentials>) with the services enabled — see below
 
-## API Google Cloud richieste
+## Required Google Cloud APIs
 
-Mappatura verificata sui sorgenti: ogni endpoint usato dal server e il tool che lo richiede.
+Mapping verified against the sources: every endpoint the server calls and the tools that call it.
 
-| # | API da abilitare | Endpoint usato dal server | Tool che la richiedono | Necessaria per | Priorità GeoScout |
+| # | API to enable | Endpoint used by the server | Tools that require it | Needed for | GeoScout priority |
 |---|---|---|---|---|---|
-| 1 | **Places API (New)** | `places.googleapis.com` (`places:searchText`, `places:searchNearby`, `GET places/{id}`, photo media) via `@googlemaps/places` | `maps_search_places`, `maps_search_nearby`, `maps_place_details`, `maps_explore_area`, `maps_compare_places`, `maps_search_along_route`, `maps_local_rank_tracker` | Ricerca/dettaglio locali, filtri `priceLevels`/`minRating`, `priceRange`, orari | **Obbligatoria** |
-| 2 | **Geocoding API** | `maps.googleapis.com/maps/api/geocode/json` via `@googlemaps/google-maps-services-js` | `maps_geocode`, `maps_reverse_geocode`, `maps_batch_geocode` (+ fallback interno di risoluzione indirizzi) | Conversione indirizzo ↔ coordinate | Alta |
-| 3 | **Routes API** | `routes.googleapis.com` (`computeRoutes`, `computeRouteMatrix`) | `maps_directions`, `maps_distance_matrix`, `maps_plan_route` | Percorsi e matrice distanze | Media |
-| 4 | **Time Zone API** | `maps.googleapis.com/maps/api/timezone/json` | `maps_timezone` | Fuso orario / ora locale | Bassa |
-| 5 | **Maps Elevation API** *(in console: "Maps Elevation API", servizio `elevation-backend`)* | `maps.googleapis.com/maps/api/elevation/json` | `maps_elevation` | Quota del terreno | Bassa |
-| 6 | **Maps Static API** | `maps.googleapis.com/maps/api/staticmap` | `maps_static_map` | Immagine mappa PNG | Bassa |
-| 7 | **Weather API** | `weather.googleapis.com/v1` (current, forecast/days, forecast/hours) | `maps_weather` | Meteo corrente/previsioni | Bassa (disponibilità regionale) |
-| 8 | **Air Quality API** | `airquality.googleapis.com/v1/currentConditions:lookup` | `maps_air_quality` | Qualità dell'aria | Bassa (disponibilità regionale) |
+| 1 | **Places API (New)** | `places.googleapis.com` (`places:searchText`, `places:searchNearby`, `GET places/{id}`, photo media) via `@googlemaps/places` | `maps_search_places`, `maps_search_nearby`, `maps_place_details`, `maps_explore_area`, `maps_compare_places`, `maps_search_along_route`, `maps_local_rank_tracker` | Place search/details, `priceLevels`/`minRating` filters, `priceRange`, opening hours | **Required** |
+| 2 | **Geocoding API** | `maps.googleapis.com/maps/api/geocode/json` via `@googlemaps/google-maps-services-js` | `maps_geocode`, `maps_reverse_geocode`, `maps_batch_geocode` (+ internal address-resolution fallback) | Address ↔ coordinate conversion | High |
+| 3 | **Routes API** | `routes.googleapis.com` (`computeRoutes`, `computeRouteMatrix`) | `maps_directions`, `maps_distance_matrix`, `maps_plan_route` | Routes and distance matrix | Medium |
+| 4 | **Time Zone API** | `maps.googleapis.com/maps/api/timezone/json` | `maps_timezone` | Time zone / local time | Low |
+| 5 | **Maps Elevation API** *(in the console: "Maps Elevation API", service `elevation-backend`)* | `maps.googleapis.com/maps/api/elevation/json` | `maps_elevation` | Ground elevation | Low |
+| 6 | **Maps Static API** | `maps.googleapis.com/maps/api/staticmap` | `maps_static_map` | PNG map image | Low |
+| 7 | **Weather API** | `weather.googleapis.com/v1` (current, forecast/days, forecast/hours) | `maps_weather` | Current weather / forecasts | Low (regional availability) |
+| 8 | **Air Quality API** | `airquality.googleapis.com/v1/currentConditions:lookup` | `maps_air_quality` | Air quality | Low (regional availability) |
 
-Abilitazione rapida (progetto GCP corrente):
+Quick enablement (current GCP project):
 
 ```bash
-PROJECT=iltuoprogetto
+PROJECT=your-project
 gcloud services enable places-backend-new.googleapis.com \
   geocoding-backend.googleapis.com \
   routes.googleapis.com \
@@ -77,17 +79,17 @@ gcloud services enable places-backend-new.googleapis.com \
   airquality.googleapis.com --project=$PROJECT
 ```
 
-### Note
+### Notes
 
-- Per l'uso minimo/GeoScout bastano **Places API (New)** + **Geocoding API**; le altre si abilitano solo se si usano i tool corrispondenti (in alternativa limitare l'esposizione con `GOOGLE_MAPS_ENABLED_TOOLS`).
-- **Maps Grounding Lite** e **Geolocation API** **non sono richieste** da questo server: la prima serve all'MCP hosted di Google (`mapstools.googleapis.com`), la seconda non è usata da nessun tool (non c'è `ip_geolocate` in questo fork).
-- La vecchia **Places API** (legacy) non è necessaria: il server usa esclusivamente Places API (New).
-- Weather API e Air Quality API hanno copertura regionale limitata: fuori copertura il tool restituisce errore dell'API.
+- For minimal/GeoScout use, **Places API (New)** + **Geocoding API** suffice; enable the others only for the corresponding tools (or limit exposure with `GOOGLE_MAPS_ENABLED_TOOLS`).
+- **Maps Grounding Lite** and **Geolocation API** are **not required** by this server: the former belongs to Google's hosted MCP (`mapstools.googleapis.com`), the latter is used by no tool (there is no `ip_geolocate` in this fork).
+- The legacy **Places API** is not needed: the server uses Places API (New) exclusively.
+- Weather API and Air Quality API have limited regional coverage: outside coverage, the tool returns an unsupported-location error message.
 
 
 ## Install
 
-**Prerequisites**: Node.js **>= 22** and a Google Maps API key (see [Requisiti](#requisiti)).
+**Prerequisites**: Node.js **>= 22** and a Google Maps API key (see [Requirements](#requirements)).
 
 ### From npm
 
@@ -131,19 +133,37 @@ npm uninstall -g mcp-google-map    # npm-based install
 rm -rf mcp-google-map              # from-source clone; also remove any MCP client registration
 ```
 
-## Avvio rapido
+## Quick Start
 
 ```bash
-scripts/setup.sh        # installa le dipendenze e crea .env
-$EDITOR .env            # inserisci GOOGLE_MAPS_API_KEY
-scripts/build.sh        # compila in dist/
+scripts/setup.sh        # installs dependencies and creates .env
+$EDITOR .env            # enter GOOGLE_MAPS_API_KEY
+scripts/build.sh        # compiles to dist/
 
-scripts/start-mcp.sh    # server MCP su stdio (per pi, Claude Desktop, Cursor, ...)
-scripts/start-http.sh   # server MCP su http://127.0.0.1:3000/mcp
-scripts/test.sh         # test unitari (nessuna API key richiesta)
+scripts/start-mcp.sh    # MCP server over stdio (for pi, Claude Desktop, Cursor, ...)
+scripts/start-http.sh   # MCP server at http://127.0.0.1:3000/mcp
+scripts/test.sh         # unit tests (no API key required)
 ```
 
-## Registrazione in un client MCP
+## Command-line interface
+
+All commands work through the `mcp-google-map` binary (npm install) or `node dist/cli.js` (from source).
+
+```bash
+mcp-google-map --stdio                                  # MCP server over stdio
+mcp-google-map --host 127.0.0.1 --port 3000             # MCP server over Streamable HTTP at /mcp
+mcp-google-map doctor                                   # local self-check: Node version, package version, API key (no network)
+mcp-google-map doctor --live --apikey "AIza..."         # also probes Geocoding, Places (New), Routes (billable calls)
+mcp-google-map exec geocode '{"address":"Tokyo Tower"}' # one tool call from the terminal
+mcp-google-map batch-geocode -i addresses.txt -o results.json
+```
+
+- `exec <tool> [params]` runs one tool and prints JSON; `params` is a JSON string. Tool names accept short (`geocode`), snake_case (`search_places`), and `maps_`-prefixed (`maps_geocode`) forms.
+- `exec` writes results to stdout and errors to stderr; it exits 1 when no API key is configured, the tool reports a failure, the JSON is invalid, or the tool name is unknown.
+- `batch-geocode` reads one address per line from `--input` (use `-` for stdin), geocodes with bounded concurrency (`--concurrency`, default 20, clamped to 1–50), writes a JSON summary `{ total, succeeded, failed, results }` to `--output` or stdout, and exits 1 if any address failed.
+- HTTP mode starts even without an API key and logs a warning; stdio mode and the CLI commands require a key (`--apikey` or `GOOGLE_MAPS_API_KEY`).
+
+## Registering in an MCP client
 
 **stdio:**
 
@@ -151,14 +171,14 @@ scripts/test.sh         # test unitari (nessuna API key richiesta)
 {
   "mcpServers": {
     "mcp-google-map": {
-      "command": "/percorso/assoluto/a/mcp-google-map/scripts/start-mcp.sh",
+      "command": "/absolute/path/to/mcp-google-map/scripts/start-mcp.sh",
       "env": { "GOOGLE_MAPS_API_KEY": "AIza..." }
     }
   }
 }
 ```
 
-**HTTP** (dopo `scripts/start-http.sh`):
+**HTTP** (after `scripts/start-http.sh`):
 
 ```json
 {
@@ -172,74 +192,76 @@ scripts/test.sh         # test unitari (nessuna API key richiesta)
 
 ### pi CLI
 
-pi legge i server MCP da `~/.pi/agent/mcp.json` (utente) o `.pi/mcp.json` (progetto, richiede trust). Voce stdio per questo server:
+pi reads MCP servers from `~/.pi/agent/mcp.json` (user) or `.pi/mcp.json` (project, requires trust). stdio entry for this server:
 
 ```json
 {
   "mcpServers": {
     "maps": {
       "command": "node",
-      "args": ["/percorso/assoluto/a/mcp-google-map/dist/cli.js", "--stdio"],
+      "args": ["/absolute/path/to/mcp-google-map/dist/cli.js", "--stdio"],
       "env": { "GOOGLE_MAPS_API_KEY": "${GOOGLE_MAPS_API_KEY}" }
     }
   }
 }
 ```
 
-- Da terminale: `pi mcp add maps -- node /percorso/assoluto/a/mcp-google-map/dist/cli.js --stdio` (aggiungere `--env GOOGLE_MAPS_API_KEY=...` per la chiave).
-- `${GOOGLE_MAPS_API_KEY}` espande la variabile d'ambiente al volo: la chiave non resta cablata nel file di configurazione.
-- Dopo una modifica di `mcp.json` esterna alla sessione, eseguire `/reload` in pi; `/mcp` ispeziona stato, tool ed errori di connessione.
-- I tool appaiono con il prefisso `mcp__<server>__`: `mcp__maps__maps_geocode`, `mcp__maps__maps_search_places`, ...
+- From a terminal: `pi mcp add maps -- node /absolute/path/to/mcp-google-map/dist/cli.js --stdio` (add `--env GOOGLE_MAPS_API_KEY=...` to pass the key).
+- `${GOOGLE_MAPS_API_KEY}` expands the environment variable on the fly: the key never stays hard-coded in the configuration file.
+- After editing `mcp.json` outside the session, run `/reload` in pi; `/mcp` inspects status, tools, and connection errors.
+- Tools appear with the `mcp__<server>__` prefix: `mcp__maps__maps_geocode`, `mcp__maps__maps_search_places`, ...
 
 ### OpenClaw
 
-OpenClaw gestisce i server MCP in `~/.openclaw/openclaw.json` tramite CLI (verificato su OpenClaw 2026.4.21):
+OpenClaw manages MCP servers in `~/.openclaw/openclaw.json` through its CLI (verified on OpenClaw 2026.4.21):
 
 ```bash
-openclaw mcp set maps '{"command":"node","args":["/percorso/assoluto/a/mcp-google-map/dist/cli.js","--stdio"],"env":{"GOOGLE_MAPS_API_KEY":"AIza..."},"description":"Google Maps: Places API (New), geocoding, routes, weather"}'
+openclaw mcp set maps '{"command":"node","args":["/absolute/path/to/mcp-google-map/dist/cli.js","--stdio"],"env":{"GOOGLE_MAPS_API_KEY":"AIza..."},"description":"Google Maps: Places API (New), geocoding, routes, weather"}'
 ```
 
-- Senza installazione locale: usare `"command":"npx","args":["-y","mcp-google-map","--stdio"]` (esegue il pacchetto npm pubblicato).
-- Dopo la modifica ricaricare il gateway o riavviare la sessione agente perché il nuovo server venga collegato.
-- Ispezione e rimozione: `openclaw mcp list`, `openclaw mcp show maps`, `openclaw mcp unset maps`.
-- L'agente OpenClaw può installare e configurare il server in autonomia (shell + `openclaw mcp set`); la creazione della API key su Google Cloud Console resta un'operazione umana.
+- Without a local install: use `"command":"npx","args":["-y","mcp-google-map","--stdio"]` (runs the published npm package).
+- After the change, reload the gateway or restart the agent session so the new server gets connected.
+- Inspect and remove: `openclaw mcp list`, `openclaw mcp show maps`, `openclaw mcp unset maps`.
+- The OpenClaw agent can install and configure the server on its own (shell + `openclaw mcp set`); creating the API key in Google Cloud Console remains a human task.
 
-### Prerequisiti di configurazione
+### Configuration prerequisites
 
-1. **Una sola API key**: crea `GOOGLE_MAPS_API_KEY` su <https://console.cloud.google.com/apis/credentials> e abilita i servizi elencati nella tabella [API Google Cloud richieste](#api-google-cloud-richieste).
-2. **Minimo operativo**: Places API (New) + Geocoding API; abilitare gli altri servizi solo per i tool corrispondenti.
-3. **Limitare l'esposizione**: `GOOGLE_MAPS_ENABLED_TOOLS=maps_geocode,maps_search_places,maps_place_details` riduce i tool registrati (e il contesto per l'LLM).
-4. **Verifica post-installazione**: `mcp-google-map doctor` (nessuna chiamata di rete), poi `mcp-google-map doctor --live --apikey "AIza..."` (probe reali su Geocoding, Places, Routes).
+1. **A single API key**: create `GOOGLE_MAPS_API_KEY` at <https://console.cloud.google.com/apis/credentials> and enable the services listed in the [Required Google Cloud APIs](#required-google-cloud-apis) table.
+2. **Minimal operational subset**: Places API (New) + Geocoding API; enable the other services only for the tools you use.
+3. **Restrict exposure**: `GOOGLE_MAPS_ENABLED_TOOLS=maps_geocode,maps_search_places,maps_place_details` reduces the registered tools (and the LLM context).
+4. **Post-install verification**: `mcp-google-map doctor` (no network calls), then `mcp-google-map doctor --live --apikey "AIza..."` (real probes against Geocoding, Places, and Routes).
+5. **Automatic update check**: enabled by default at server startup; set `MCP_AUTO_UPDATE_DISABLED=1` (also `true`/`yes`) to skip the npm registry version check.
 
-## Struttura del progetto
+## Project structure
 
 ```
 mcp-google-map/
-├── src/            # sorgenti del server MCP
-│   ├── cli.ts      # entry point (stdio/HTTP, comandi exec e doctor)
-│   ├── config.ts   # registrazione dei tool esposti
+├── src/            # MCP server sources
+│   ├── cli.ts      # entry point (stdio/HTTP, exec and doctor commands)
+│   ├── config.ts   # registration of the exposed tools
 │   ├── core/       # BaseMcpServer: MCP SDK, stdio + Streamable HTTP
-│   ├── services/   # Places API (New), Geocoding, Routes, clima
-│   └── tools/      # definizione dei 18 tool MCP
-├── scripts/        # script bash di supporto (setup/build/start/test)
-├── docs/           # documentazione del progetto
-└── tests/          # test unitari (mock) + smoke/e2e (API key reale)
+│   ├── services/   # Places API (New), Geocoding, Routes, environment
+│   ├── tools/      # definition of the 18 MCP tools
+│   └── utils/      # API key resolution, request context, update check
+├── scripts/        # helper bash scripts (setup/build/start/test)
+├── docs/           # project documentation
+└── tests/          # unit tests (mocked) + smoke/e2e (real API key)
 ```
 
-## Documentazione
+## Documentation
 
-- [docs/TOOLS.md](docs/TOOLS.md) — catalogo dei tool e parametri
-- [docs/CONFIGURATION.md](docs/CONFIGURATION.md) — variabili d'ambiente, trasporti, API key
-- [docs/GEOSCOUT.md](docs/GEOSCOUT.md) — compatibilità GeoScout 6.2 (filtri economici, FieldMask, payload raw)
+- [docs/TOOLS.md](docs/TOOLS.md) — tool catalog and parameters
+- [docs/CONFIGURATION.md](docs/CONFIGURATION.md) — environment variables, transports, API key
+- [docs/GEOSCOUT.md](docs/GEOSCOUT.md) — GeoScout 6.2 compatibility (budget filters, FieldMask, raw payload)
 
-## Sviluppo
+## Development
 
 ```bash
-npm run dev        # build incrementale in watch
+npm run dev        # incremental watch build
 npm run typecheck  # tsc --noEmit
-scripts/test.sh    # unit test
+npm test           # unit tests
 ```
 
-## Licenza
+## License
 
-GPL-3.0 — vedi [LICENSE](LICENSE).
+GPL-3.0 — see [LICENSE](LICENSE).
