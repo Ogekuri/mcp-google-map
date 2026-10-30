@@ -33,6 +33,7 @@ Definite in `.env` (copia da `.env.example`):
 | `MCP_SERVER_PORT` | `3000` | Porta del trasporto HTTP |
 | `MCP_SERVER_HOST` | `0.0.0.0` | Interfaccia di bind HTTP (usare `127.0.0.1` per esposizione solo locale) |
 | `GOOGLE_MAPS_ENABLED_TOOLS` | `*` | Allowlist separata da virgole dei tool esposti (riduce il contesto per l'LLM). Esempio: `maps_search_places,maps_place_details,maps_geocode` |
+| `MCP_AUTO_UPDATE_DISABLED` | unset (check enabled by default) | Set `1`, `true`, or `yes` to disable the automatic update check performed at server startup; any other value keeps it enabled |
 
 ## Trasporti
 

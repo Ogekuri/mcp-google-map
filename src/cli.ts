@@ -12,6 +12,7 @@ import { fileURLToPath } from "url";
 import { dirname } from "path";
 import { readFileSync, writeFileSync, existsSync } from "fs";
 import { createInterface } from "readline";
+import { checkForUpdates } from "./utils/autoUpdate.js";
 
 // Get the directory of the current module
 const __filename = fileURLToPath(import.meta.url);
@@ -669,6 +670,10 @@ if (isRunDirectly || isMainModule) {
         if (argv.apikey) {
           process.env.GOOGLE_MAPS_API_KEY = argv.apikey as string;
         }
+
+        // Automatic update check (enabled by default). Fire-and-forget so it
+        // never blocks startup; failures are logged to stderr only.
+        void checkForUpdates({ currentVersion: packageVersion }).catch(() => undefined);
 
         const tools = filterTools(serverConfigs[0].tools);
 

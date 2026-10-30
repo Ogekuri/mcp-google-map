@@ -34,7 +34,10 @@
     - external: yargs/hideBin
 
   TRACE-B: HTTP-server mode (default command, no `--stdio`) [`src/cli.ts`]
-  - `$0` handler: applies `--apikey` to env; announces banners; delegates
+  - `$0` handler: applies `--apikey` to env; fires auto-update check; announces banners; delegates
+    - `checkForUpdates(...)`: fire-and-forget npm update check (`void ... .catch(() => undefined)`; never blocks startup); skipped when `MCP_AUTO_UPDATE_DISABLED` is set [`src/utils/autoUpdate.ts`]
+      - `isAutoUpdateDisabled(env)`: true when `MCP_AUTO_UPDATE_DISABLED` is `1`/`true`/`yes` case-insensitively; short-circuits before any network call
+      - external: `fetch` → `https://registry.npmjs.org/mcp-google-map/latest` with `AbortSignal.timeout(2000)`; stderr-only diagnostics and upgrade notice via `Logger`
     - `startServer(port, apiKey, host)`: env overrides; iterates `serverConfigs` (one instance `MCP-Server`, port env `MCP_SERVER_PORT`); boots each instance; logs completion
       - `filterTools(tools)`: applies `GOOGLE_MAPS_ENABLED_TOOLS` allowlist; logs active count or zero-match error [`src/config.ts`]
         - `Logger.log(...)` / `Logger.error(...)`: stderr diagnostics [`src/index.ts`]
@@ -58,7 +61,7 @@
       - external: `express()`, `app.listen`, `isInitializeRequest`, `StreamableHTTPServerTransport`, `randomUUID`, `Promise.allSettled`
 
   TRACE-C: stdio-server mode (default command, `--stdio`) [`src/cli.ts`]
-  - `$0` handler: applies `--apikey` to env
+  - `$0` handler: applies `--apikey` to env; fires auto-update check (same `checkForUpdates` node as TRACE-B)
     - `filterTools(serverConfigs[0].tools)`: allowlist [`src/config.ts`]
     - `new BaseMcpServer(name, tools)` → `createMcpServer()` (as TRACE-B) [`src/core/BaseMcpServer.ts`]
     - `startStdio()`: creates `StdioServerTransport` and connects it
@@ -223,7 +226,7 @@
 - External Boundaries:
   - stdio: stdin/stdout JSON-RPC framing (stdio-server mode); stdout guard installed in `connect(...)`.
   - network (inbound): Express HTTP listener on `http://{host}:{port}/mcp` (POST/GET/DELETE; SSE for GET).
-  - network (outbound): `https://routes.googleapis.com` (computeRoutes, computeRouteMatrix), `https://places.googleapis.com/v1/places:searchText`, `@googlemaps/places` `PlacesClient` (searchNearby, searchText, getPlace, getPhotoMedia), `@googlemaps/google-maps-services-js` `Client` (geocode, reverseGeocode, timezone, elevation), `https://weather.googleapis.com`, `https://airquality.googleapis.com`, `https://maps.googleapis.com/maps/api/staticmap`.
+  - network (outbound): `https://routes.googleapis.com` (computeRoutes, computeRouteMatrix), `https://registry.npmjs.org` (automatic update check, fire-and-forget, disabled by `MCP_AUTO_UPDATE_DISABLED`), `https://places.googleapis.com/v1/places:searchText`, `@googlemaps/places` `PlacesClient` (searchNearby, searchText, getPlace, getPhotoMedia), `@googlemaps/google-maps-services-js` `Client` (geocode, reverseGeocode, timezone, elevation), `https://weather.googleapis.com`, `https://airquality.googleapis.com`, `https://maps.googleapis.com/maps/api/staticmap`.
   - filesystem: `.env` loads (dotenv), `package.json` version read (doctor), batch-geocode input/output files.
   - OS/runtime: `process.env` reads/writes, `process.exit`/`process.exitCode`, `process.stdout`/`process.stderr`, `randomUUID` (node:crypto), `AsyncLocalStorage` (node:async_hooks), `Date`/`Math` local-time computations.
 
@@ -235,4 +238,5 @@
 | EDGE-03 | external MCP client process → `PROC:main` | HTTP POST/GET/DELETE (Express) + SSE | `http://{host}:{port}/mcp` | JSON-RPC 2.0 body; headers `mcp-session-id`, `X-Google-Maps-API-Key`, `Authorization: Bearer`; 400 + JSON-RPC error `-32000` on invalid session | `src/core/BaseMcpServer.ts` |
 | EDGE-04 | `PROC:main` → external MCP client process | HTTP response / SSE stream | `/mcp` | JSON-RPC responses; SSE event stream on GET; per-session isolation keyed by `mcp-session-id` | `src/core/BaseMcpServer.ts` |
 | EDGE-05 | `PROC:main` request-handling path → `PROC:main` tool-ACTION path (intra-process) | `AsyncLocalStorage` context store | in-process `RequestContext { apiKey?, sessionId? }` | per-request API key + session id; read by `getCurrentApiKey()` inside every tool ACTION | `src/utils/requestContext.ts`, `src/core/BaseMcpServer.ts`, `src/tools/maps/*.ts` |
-| EDGE-06 | `PROC:main` → invoking shell / CI consumer (external) | process stdout/stderr | stdout / stderr | CLI JSON outputs: doctor `DoctorReport { success, version, live, checks[] }`; exec result JSON or `{ error }`; batch summary `{ total, succeeded, failed, results }`; `[INFO]`/`[ERROR]` diagnostics via `Logger` | `src/cli.ts`, `src/index.ts` |
+| EDGE-06 | `PROC:main` request-handling path → invoking shell / CI consumer (external) | process stdout/stderr | stdout / stderr | CLI JSON outputs: doctor `DoctorReport { success, version, live, checks[] }`; exec result JSON or `{ error }`; batch summary `{ total, succeeded, failed, results }`; `[INFO]`/`[ERROR]` diagnostics via `Logger` | `src/cli.ts`, `src/index.ts` |
+| EDGE-07 | `PROC:main` startup path → external npm registry | HTTPS GET, fire-and-forget (not awaited; bounded by `AbortSignal.timeout(2000)`) | `https://registry.npmjs.org/mcp-google-map/latest` | Request: no body; Response: JSON `{ version }`; check skipped entirely when `MCP_AUTO_UPDATE_DISABLED` is `1`/`true`/`yes`; newer version reported on stderr only | `src/utils/autoUpdate.ts`, `src/cli.ts` |

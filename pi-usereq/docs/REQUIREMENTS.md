@@ -217,6 +217,13 @@ Components and libraries (evidence: `package.json` `dependencies`/`devDependenci
 - **REQ-079**: MUST start the MCP server in stdio mode when `--stdio` is passed, otherwise in HTTP mode, applying `--apikey` to the environment before startup.
 - **REQ-080**: MUST log a warning instead of failing when the default server-start command runs in HTTP mode without an API key.
 
+#### Automatic Update Check
+- **REQ-082**: MUST run an automatic update check by default at server startup in stdio and HTTP modes, comparing the running version against the latest `mcp-google-map` version published on the npm registry.
+- **REQ-083**: MUST skip the automatic update check and make no registry network calls when `MCP_AUTO_UPDATE_DISABLED` is set to `1`, `true`, or `yes` case-insensitively.
+- **REQ-084**: MUST report a newer available npm version on stderr only, including current version, latest version, and an upgrade command.
+- **REQ-085**: MUST NOT block server startup on the automatic update check and MUST tolerate registry, network, and malformed-response failures with stderr diagnostics only.
+- **REQ-086**: MUST document `MCP_AUTO_UPDATE_DISABLED` in `.env.example` and `docs/CONFIGURATION.md`, stating that the automatic update check is enabled by default.
+
 ### 3.3 Known Limitations (True State)
 - **LIM-001**: `maps_search_nearby` may return fewer than 20 results when client-side `openNow`/`minRating` filters discard matches post-query.
 - **LIM-002**: `GoogleMapsTools.parseCoordinates` validates only numeric parsing, not geographic ranges; range rejection happens only in composite `resolveLocation` (`src/services/toolclass.ts`).
@@ -237,3 +244,4 @@ Components and libraries (evidence: `package.json` `dependencies`/`devDependenci
 - **TST-008**: MUST verify REQ-031/REQ-034 (attribution retention) by running `npm test` (`tests/placeAttribution.unit.test.ts`): mocked details responses keep source and disclosure metadata through the facade.
 - **TST-009**: MUST verify REQ-056 defaults by running `npm test` (`tests/exploreArea.unit.test.ts`): default type set contains only valid Places API (New) type names and caller-supplied types are preserved.
 - **TST-010**: SHOULD verify end-to-end behavior against live Google APIs by running `npm run test:e2e` (`tests/smoke.test.ts`) with a real API key; pass requires all live tool calls to succeed. This test is excluded from `npm test`.
+- **TST-011**: MUST verify REQ-082/REQ-083/REQ-084/REQ-085 by running `npm test` (`tests/autoUpdate.unit.test.ts`): injected fetch and logger assert disabled short-circuit without fetch, newer-version stderr notice, and startup-failure tolerance.

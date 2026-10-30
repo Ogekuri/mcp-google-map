@@ -34,10 +34,11 @@
     │       └── weather.ts
     └── utils
         ├── apiKeyManager.ts
+        ├── autoUpdate.ts
         └── requestContext.ts
 ```
 
-# cli.ts | TypeScript | 702L | 14 symbols | 12 imports | 15 comments
+# cli.ts | TypeScript | 707L | 14 symbols | 13 imports | 17 comments
 > Path: `src/cli.ts`
 
 ## Imports
@@ -54,50 +55,51 @@ import { fileURLToPath } from "url";
 import { dirname } from "path";
 import { readFileSync, writeFileSync, existsSync } from "fs";
 import { createInterface } from "readline";
+import { checkForUpdates } from "./utils/autoUpdate.js";
 ```
 
 ## Definitions
 
-### fn `export async function startServer(port?: number, apiKey?: string, host?: string): Promise<void>` (L25-78)
+### fn `export async function startServer(port?: number, apiKey?: string, host?: string): Promise<void>` (L26-79)
 
-- type `type ExecFailureResponse = {` (L103)
-### iface `interface ExecOutput` (L108-110)
+- type `type ExecFailureResponse = {` (L104)
+### iface `interface ExecOutput` (L109-111)
 
-### iface `interface ExecStreams` (L112-115)
+### iface `interface ExecStreams` (L113-116)
 
-- type `type ExecToolRunner = (toolName: string, params: any, apiKey: string) => Promise<unknown>;` (L117)
-- type `export type DoctorCheck = {` (L119)
-- type `export type DoctorReport = {` (L125)
-- type `type DoctorToolRunner = (toolName: string, params: any, apiKey: string) => Promise<unknown>;` (L132)
-### fn `function isExecFailureResponse(result: unknown): result is ExecFailureResponse` (L134-141)
+- type `type ExecToolRunner = (toolName: string, params: any, apiKey: string) => Promise<unknown>;` (L118)
+- type `export type DoctorCheck = {` (L120)
+- type `export type DoctorReport = {` (L126)
+- type `type DoctorToolRunner = (toolName: string, params: any, apiKey: string) => Promise<unknown>;` (L133)
+### fn `function isExecFailureResponse(result: unknown): result is ExecFailureResponse` (L135-142)
 
-### fn `function getExecFailureMessage(toolName: string, result: ExecFailureResponse): string` (L143-151)
+### fn `function getExecFailureMessage(toolName: string, result: ExecFailureResponse): string` (L144-152)
 
-### fn `export async function execTool(toolName: string, params: any, apiKey: string): Promise<any>` (L153-287)
+### fn `export async function execTool(toolName: string, params: any, apiKey: string): Promise<any>` (L154-288)
 
-### fn `export async function runExecCommand(` (L297-302)
+### fn `export async function runExecCommand(` (L298-303)
 
-### fn `export async function runDoctor(` (L326-411)
+### fn `export async function runDoctor(` (L327-412)
 
-### fn `const semaphore = async (tasks: (() => Promise<void>)[], limit: number) =>` (L585-597)
+### fn `const semaphore = async (tasks: (() => Promise<void>)[], limit: number) =>` (L586-598)
 
 ## Symbol Index
 |Symbol|Kind|Vis|Lines|Sig|
 |---|---|---|---|---|
-|`startServer`|fn||25-78|export async function startServer(port?: number, apiKey?:...|
-|`ExecFailureResponse`|type||103||
-|`ExecOutput`|iface||108-110|interface ExecOutput|
-|`ExecStreams`|iface||112-115|interface ExecStreams|
-|`ExecToolRunner`|type||117||
-|`DoctorCheck`|type||119||
-|`DoctorReport`|type||125||
-|`DoctorToolRunner`|type||132||
-|`isExecFailureResponse`|fn||134-141|function isExecFailureResponse(result: unknown): result i...|
-|`getExecFailureMessage`|fn||143-151|function getExecFailureMessage(toolName: string, result: ...|
-|`execTool`|fn||153-287|export async function execTool(toolName: string, params: ...|
-|`runExecCommand`|fn||297-302|export async function runExecCommand(|
-|`runDoctor`|fn||326-411|export async function runDoctor(|
-|`semaphore`|fn||585-597|const semaphore = async (tasks: (() => Promise<void>)[], ...|
+|`startServer`|fn||26-79|export async function startServer(port?: number, apiKey?:...|
+|`ExecFailureResponse`|type||104||
+|`ExecOutput`|iface||109-111|interface ExecOutput|
+|`ExecStreams`|iface||113-116|interface ExecStreams|
+|`ExecToolRunner`|type||118||
+|`DoctorCheck`|type||120||
+|`DoctorReport`|type||126||
+|`DoctorToolRunner`|type||133||
+|`isExecFailureResponse`|fn||135-142|function isExecFailureResponse(result: unknown): result i...|
+|`getExecFailureMessage`|fn||144-152|function getExecFailureMessage(toolName: string, result: ...|
+|`execTool`|fn||154-288|export async function execTool(toolName: string, params: ...|
+|`runExecCommand`|fn||298-303|export async function runExecCommand(|
+|`runDoctor`|fn||327-412|export async function runDoctor(|
+|`semaphore`|fn||586-598|const semaphore = async (tasks: (() => Promise<void>)[], ...|
 
 
 ---
@@ -799,6 +801,86 @@ import { Request } from "express";
 |Symbol|Kind|Vis|Lines|Sig|
 |---|---|---|---|---|
 |`ApiKeyManager`|class||3-72|export class ApiKeyManager|
+
+
+---
+
+# autoUpdate.ts | TypeScript | 192L | 7 symbols | 1 imports | 22 comments
+> Path: `src/utils/autoUpdate.ts`
+
+## Imports
+```
+import { Logger } from "../index.js";
+```
+
+## Definitions
+
+### iface `export interface AutoUpdateLogger` (L33-38)
+- @brief Minimal logger contract consumed by the update check.
+- @details Structural subset of `Logger` (`src/index.ts`); injectable so tests
+capture diagnostics without touching stderr.
+- @param args {unknown[]} Diagnostic fragments joined for stderr output.
+- @param args {unknown[]} Error diagnostic fragments for stderr output.
+
+### iface `export interface AutoUpdateCheckerDeps` (L46-61)
+- @brief Dependency injection surface of `checkForUpdates`.
+- @details Every field is optional; omitted fields resolve to production
+defaults (`process.env`, global `fetch`, `Logger`). Injection exists to keep
+unit tests deterministic and network-free (TST-011).
+
+### iface `export interface AutoUpdateResult` (L64-69)
+
+### fn `export function isAutoUpdateDisabled(` (L81-86)
+- @brief Evaluates the disable flag for the automatic update check.
+- @details Reads `AUTO_UPDATE_DISABLED_ENV` from the given environment map and
+matches values `1`, `true`, `yes` case-insensitively after trimming; any
+other value (including unset, empty, `0`, `false`) keeps the check enabled.
+- @param env {Record<string, string | undefined>} Environment map to inspect. Defaults to `process.env`.
+- @return {boolean} True when the update check is disabled; false when enabled.
+- @note Complexity: O(1). Pure; no side effects.
+- @satisfies REQ-083
+
+### fn `export function isNewerVersion(candidate: string, current: string): boolean` (L100-123)
+- @brief Compares two dotted numeric version strings.
+- @details Splits both inputs on `.` into integer segments, right-pads the
+shorter sequence with zeroes, and returns on the first differing segment.
+Any non-integer segment (e.g. prerelease suffix `3-beta.1`) forces False, so
+unparseable or prerelease candidates never trigger an update notice.
+- @param candidate {string} Version reported as available (latest).
+- @param current {string} Version currently running.
+- @return {boolean} True only when `candidate` is strictly newer than `current`.
+- @note Complexity: O(k) where k is the number of dotted segments. Pure; no side effects.
+- @satisfies REQ-084
+
+### fn `const toSegments = (version: string): number[] =>` (L101-113)
+
+### fn `export async function checkForUpdates(` (L142-143)
+- @brief Runs the automatic update check against the npm registry.
+- @details Resolution order: disabled-flag short-circuit (REQ-083, zero
+network calls) → running-version guard (missing `currentVersion` aborts with
+an stderr diagnostic, zero network calls) → single `GET {registry}/{package}/latest`
+with `timeoutMs` deadline → `response.ok` and `payload.version` validation →
+`isNewerVersion` gate → stderr upgrade notice (REQ-084). Every failure path
+(disabled, missing version, non-OK status, malformed payload, network error)
+returns null, logs to stderr only, and never throws (REQ-085).
+- @param deps {AutoUpdateCheckerDeps} Optional dependency overrides; production defaults when omitted.
+- @return {Promise<AutoUpdateResult | null>} `{ currentVersion, latestVersion }` when a strictly newer version is published; null otherwise.
+- @warning Must be invoked fire-and-forget (`void checkForUpdates(...)`) so server startup is never awaited on it (REQ-085).
+- @note Complexity: O(k) in version segments plus one HTTP round-trip bounded by `timeoutMs`.
+- @see isAutoUpdateDisabled
+- @see isNewerVersion
+- @satisfies REQ-082, REQ-083, REQ-084, REQ-085
+
+## Symbol Index
+|Symbol|Kind|Vis|Lines|Sig|
+|---|---|---|---|---|
+|`AutoUpdateLogger`|iface||33-38|export interface AutoUpdateLogger|
+|`AutoUpdateCheckerDeps`|iface||46-61|export interface AutoUpdateCheckerDeps|
+|`AutoUpdateResult`|iface||64-69|export interface AutoUpdateResult|
+|`isAutoUpdateDisabled`|fn||81-86|export function isAutoUpdateDisabled(|
+|`isNewerVersion`|fn||100-123|export function isNewerVersion(candidate: string, current...|
+|`toSegments`|fn||101-113|const toSegments = (version: string): number[] =>|
+|`checkForUpdates`|fn||142-143|export async function checkForUpdates(|
 
 
 ---
