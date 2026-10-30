@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.4.0](https://github.com/Ogekuri/mcp-google-map/compare/v0.3.0..v0.4.0) - 2026-10-30
+### 🚜  Changes
+- enable startup update check by default with opt-out [useReq] *(auto-update)*
+  - Add auto-update check at MCP server startup (stdio + HTTP), enabled by
+  - default (REQ-082), comparing running version vs npm registry latest.
+  - Add inverse-polarity disable variable MCP_AUTO_UPDATE_DISABLED
+  - (1/true/yes case-insensitive) skipping all registry calls (REQ-083).
+  - Report newer versions on stderr only with upgrade command (REQ-084);
+  - fire-and-forget execution tolerates all failures without blocking
+  - startup (REQ-085).
+  - New src/utils/autoUpdate.ts with injectable fetch/logger/env; new
+  - tests/autoUpdate.unit.test.ts covering TST-011 (55/55 pass).
+  - Document variable in .env.example and docs/CONFIGURATION.md (REQ-086);
+  - update REQUIREMENTS.md, WORKFLOW.md, REFERENCES.md.
+- enforce publish version guard via prepublishOnly [useReq] *(packaging)*
+  - Add PKG-017 to SRS 2.3: npm publish MUST fail when package.json version is 0.0.0-based or carries a prerelease/build suffix (stray 0.0.0-stage incident).
+  - Add scripts/check-publish-version.mjs (Doxygen-documented): strict X.Y.Z pattern plus 0.0.0 placeholder prefix check; wired as first stage of prepublishOnly, preserving PKG-005 chain (typecheck, tests, build).
+  - Verified: tsc --noEmit clean, 41/41 unit tests, npm publish --dry-run full chain, refusal cases 0.0.0-stage and 1.2.3-rc.1 exit 1.
+  - Ops: unpublished mcp-google-map@0.0.0-stage from the npm registry.
+
 ## [0.3.0](https://github.com/Ogekuri/mcp-google-map/compare/v0.2.0..v0.3.0) - 2026-10-29
 ### 🚜  Changes
 - document pi CLI and OpenClaw MCP registration and Google API prerequisites [useReq] *(docs)*
@@ -51,6 +71,8 @@
 
 - \[0.2.0\]: https://github.com/Ogekuri/mcp-google-map/releases/tag/v0.2.0
 - \[0.3.0\]: https://github.com/Ogekuri/mcp-google-map/releases/tag/v0.3.0
+- \[0.4.0\]: https://github.com/Ogekuri/mcp-google-map/releases/tag/v0.4.0
 
 [0.2.0]: https://github.com/Ogekuri/mcp-google-map/releases/tag/v0.2.0
 [0.3.0]: https://github.com/Ogekuri/mcp-google-map/compare/v0.2.0..v0.3.0
+[0.4.0]: https://github.com/Ogekuri/mcp-google-map/compare/v0.3.0..v0.4.0
